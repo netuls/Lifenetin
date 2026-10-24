@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3A">
+<title>Círculo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--navy:#0B1F3A;--blue:#2563EB;--blue-d:#1D4ED8;--bg:#F6F8FB;--card:#fff;--ink:#0F172A;--mut:#64748B;--line:#E2E8F0;--ok:#16A34A;--bad:#DC2626;--sh:0 8px 24px rgba(15,23,42,.14);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0B1220;--card:#131C2E;--ink:#E7EDF7;--mut:#93A1B8;--line:#24324A;--blue:#3B82F6;--blue-d:#2563EB;--sh:0 8px 24px rgba(0,0,0,.5);color-scheme:dark}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{border:0;border-radius:12px;padding:.8em 1.2em;background:var(--blue);color:#fff;font-weight:600;cursor:pointer;transition:background .15s}
+button:hover{background:var(--blue-d)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover{background:var(--bg)}
+button.danger{color:var(--bad)}
+button:focus-visible,input:focus-visible{outline:3px solid rgba(37,99,235,.45);outline-offset:2px}
+label{display:block;font-weight:500;font-size:.85rem;color:var(--mut)}
+input{width:100%;padding:.8em 1em;border-radius:12px;border:1px solid var(--line);background:var(--card);margin:.35em 0 1.1em;color:var(--ink)}
+#join{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:var(--navy)}
+#join form{width:min(420px,100%);background:var(--card);border-radius:20px;padding:32px 28px;box-shadow:var(--sh)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.15rem;letter-spacing:-.01em}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--navy);display:grid;place-items:center}
+.logo i{width:16px;height:16px;border:3px solid #60A5FA;border-radius:50%;position:relative}
+.logo i::after{content:"";position:absolute;inset:3px;background:#60A5FA;border-radius:50%}
+#join h1{font-size:1.6rem;letter-spacing:-.02em;margin:22px 0 6px}
+#join p.lead{margin:0 0 24px;color:var(--mut)}
+#join button[type=submit]{width:100%}
+#err{color:var(--bad);font-size:.85rem;min-height:1.2em;margin:.8em 0 0}
+#app{position:fixed;inset:0;display:none}
+#map{position:absolute;inset:0}
+.top{position:absolute;z-index:500;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chip{background:var(--card);border-radius:999px;padding:.5em .95em .5em .6em;box-shadow:var(--sh);display:flex;align-items:center;gap:8px;font-weight:600;font-size:.85rem;max-width:58%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .logo{width:26px;height:26px;border-radius:8px}.chip .logo i{width:12px;height:12px;border-width:2px}.chip .logo i::after{inset:2px}
+.chip.st{padding:.5em .95em;color:var(--mut)}
+#sheet{position:absolute;z-index:500;left:0;right:0;bottom:0;background:var(--card);border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(15,23,42,.16);padding:8px 16px calc(env(safe-area-inset-bottom,0px) + 14px);height:min(44%,380px);display:flex;flex-direction:column}
+@media (min-width:760px){#sheet{left:16px;right:auto;bottom:16px;width:380px;border-radius:20px;height:min(60%,520px)}}
+.grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 10px}
+.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:10px}
+.tabs button{flex:1;background:transparent;color:var(--mut);padding:.55em .3em;font-size:.82rem;border-radius:9px}
+.tabs button[aria-selected=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.15)}
+.panel{display:none;overflow:auto;flex:1}.panel.on{display:block}
+.row{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.row .t{flex:1;min-width:0;font-weight:500}.row small{display:block;color:var(--mut);font-weight:400}
+.dot,.pin{border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;flex:none}
+.dot{width:38px;height:38px;font-size:.85rem}
+.pin{width:38px;height:38px;font-size:.85rem;border:3px solid #fff;box-shadow:0 2px 8px rgba(15,23,42,.4)}
+.empty{color:var(--mut);padding:14px 2px}
+.stack{display:grid;gap:10px;padding-top:4px}
+.mini{padding:.45em .8em;font-size:.8rem}
+.leaflet-control-attribution{font-size:9px}
+@media (prefers-color-scheme:dark){.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9)}}
+</style>
+</head>
+<body>
+<div id="join">
+  <form id="joinForm">
+    <div class="brand"><div class="logo"><i></i></div>Círculo</div>
+    <h1>Entre no seu círculo</h1>
+    <p class="lead">Veja onde sua família está em tempo real, com privacidade e sem mensalidade.</p>
+    <label for="name">Seu nome</label><input id="name" required maxlength="20" autocomplete="given-name">
+    <label for="code">Código do círculo</label><input id="code" required minlength="6" maxlength="30" placeholder="ex.: silva-9f3k2x" autocapitalize="none" autocomplete="off">
+    <button type="submit">Entrar</button>
+    <p id="err" role="alert"></p>
+  </form>
+</div>
+<div id="app">
+  <div id="map"></div>
+  <div class="top">
+    <div class="chip"><div class="logo"><i></i></div><span id="circleName"></span></div>
+    <div class="chip st" id="status">Aguardando GPS…</div>
+  </div>
+  <section id="sheet" aria-label="Painel do círculo">
+    <div class="grab"></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="p1">Pessoas</button>
+      <button role="tab" aria-selected="false" data-tab="p2">Lugares</button>
+      <button role="tab" aria-selected="false" data-tab="p3">Avisos</button>
+      <button role="tab" aria-selected="false" data-tab="p4">Ajustes</button>
+    </div>
+    <div class="panel on" id="p1"><div id="members"></div></div>
+    <div class="panel" id="p2">
+      <form id="searchForm" style="display:flex;gap:8px;align-items:flex-start"><input id="q" type="search" placeholder="Buscar endereço (ex.: Avenida Contorno Sul)" style="margin:0" aria-label="Buscar endereço"><button type="submit" class="mini" style="padding:.8em 1em">Buscar</button></form>
+      <div id="results"></div>
+      <div id="places"></div>
+      <div class="stack"><button id="savePlace" class="ghost">Salvar lugar atual (GPS)</button></div>
+    </div>
+    <div class="panel" id="p3"><div id="events"></div></div>
+    <div class="panel" id="p4"><div class="stack">
+      <button id="notif" class="ghost">Ativar avisos no aparelho</button>
+      <button id="manual" class="ghost">Definir posição no mapa (teste)</button>
+      <button id="wake" class="ghost">Manter tela acesa</button>
+      <button id="leave" class="ghost danger">Sair do círculo</button>
+    </div></div>
+  </section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module">
+import { firebaseConfig } from './firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, setDoc, addDoc, deleteDoc, collection, onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const $ = id => document.getElementById(id);
+const COLORS = ['#2563EB','#0D9488','#7C3AED','#DB2777','#EA580C','#0891B2','#4F46E5'];
+const store = { get:k=>{try{return localStorage.getItem(k)}catch{return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}, del:k=>{try{localStorage.removeItem(k)}catch{}} };
+const NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+if ('serviceWorker' in navigator && !NATIVE) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+let db, uid, me, circle, map, myPos, places = [], inside = {}, markers = {}, lastSent = { t:0, lat:0, lng:0 }, loadedAt = Date.now(), centered = false, wakeLock = null;
+
+$('name').value = store.get('name') || '';
+$('code').value = store.get('code') || '';
+if (store.get('name') && store.get('code')) start(store.get('name'), store.get('code'));
+$('joinForm').addEventListener('submit', e => { e.preventDefault(); start($('name').value.trim(), $('code').value.trim().toLowerCase()); });
+
+const initials = n => n.trim().slice(0,2).toUpperCase();
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ago = ts => { const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'agora' : m < 60 ? `há ${m} min` : `há ${Math.round(m / 60)} h`; };
+const dist = (la1, ln1, la2, ln2) => { const r = Math.PI / 180, x = (la2 - la1) * r, y = (ln2 - ln1) * r * Math.cos((la1 + la2) / 2 * r); return Math.hypot(x, y) * 6371000; };
+
+async function start(name, code) {
+  try {
+    if (firebaseConfig.apiKey === 'COLE_AQUI') throw new Error('Configure o arquivo firebase-config.js primeiro.');
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    uid = (await signInAnonymously(getAuth(app))).user.uid;
+  } catch (e) { $('err').textContent = e.message; return; }
+  store.set('name', name); store.set('code', code);
+  circle = 'circles/' + code;
+  me = { name, color: COLORS[[...uid].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length] };
+  $('join').style.display = 'none';
+  $('app').style.display = 'block';
+  $('circleName').textContent = code;
+  initMap(); watch(true); listen(); keepAwake(); if (NATIVE) setupPush();
+}
+
+function initMap() {
+  map = L.map('map', { zoomControl: false }).setView([-3.73, -38.52], 13);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+}
+
+let manual = false;
+function publish(lat, lng, acc) {
+  myPos = { lat, lng };
+  $('status').textContent = manual ? 'Posição manual' : 'Compartilhando';
+  const now = Date.now();
+  lastSent = { t: now, lat, lng };
+  setDoc(doc(db, circle + '/members', uid), { name: me.name, color: me.color, lat, lng, acc: Math.round(acc || 0), ts: now }, { merge: true })
+    .catch(e => { $('status').textContent = 'Erro ao salvar: ' + (e.code || 'rede'); });
+  checkGeofences(lat, lng);
+}
+const onMapClick = e => publish(e.latlng.lat, e.latlng.lng, 0);
+let bgId = null;
+async function watchNative() {
+  const BG = Capacitor.registerPlugin('BackgroundGeolocation');
+  bgId = await BG.addWatcher({ backgroundTitle: 'Círculo', backgroundMessage: 'Compartilhando sua localização com o círculo.', requestPermissions: true, stale: false, distanceFilter: 20 },
+    (loc, err) => {
+      if (err) {
+        $('status').textContent = err.code === 'NOT_AUTHORIZED' ? 'Permita a localização o tempo todo' : 'Sem sinal de localização';
+        if (err.code === 'NOT_AUTHORIZED' && confirm('O Círculo precisa da localização "o tempo todo". Abrir as configurações?')) BG.openSettings();
+        return;
+      }
+      if (!manual) publish(loc.latitude, loc.longitude, loc.accuracy);
+    });
+}
+async function setupPush() {
+  try {
+    const FM = Capacitor.registerPlugin('FirebaseMessaging');
+    if ((await FM.requestPermissions()).receive !== 'granted') return;
+    const { token } = await FM.getToken();
+    await setDoc(doc(db, circle + '/members', uid), { token }, { merge: true });
+  } catch (e) { console.warn('push', e); }
+}
+let watchId = null;
+function watch(precise = true) {
+  if (NATIVE) { if (!bgId) watchNative(); return; }
+  if (!navigator.geolocation) { $('status').textContent = 'Sem GPS neste aparelho'; return; }
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = navigator.geolocation.watchPosition(p => {
+    if (!manual) publish(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
+  }, e => {
+    if (manual) return;
+    if (e.code === 1) { $('status').textContent = 'Permita a localização'; return; }
+    if (precise) { $('status').textContent = 'Buscando sinal…'; watch(false); return; }
+    $('status').textContent = e.code === 2 ? 'Sem sinal de localização' : 'Tempo esgotado, tentando…';
+    setTimeout(() => watch(false), 5000);
+  }, { enableHighAccuracy: precise, maximumAge: 30000, timeout: precise ? 15000 : 60000 });
+}
+
+function checkGeofences(lat, lng) {
+  for (const pl of places) {
+    const now = dist(lat, lng, pl.lat, pl.lng) <= pl.radius;
+    const was = inside[pl.id];
+    inside[pl.id] = now;
+    if (was !== undefined && was !== now) {
+      addDoc(collection(db, circle + '/events'), { uid, name: me.name, place: pl.name, type: now ? 'chegou' : 'saiu', ts: Date.now() }).catch(() => {});
+    }
+  }
+}
+
+function listen() {
+  onSnapshot(collection(db, circle + '/members'), snap => {
+    const list = [];
+    snap.forEach(d => {
+      const m = d.data(); if (m.lat == null) return; list.push(m);
+      const icon = L.divIcon({ className: '', iconSize: [36, 36], html: `<div class="pin" style="background:${esc(m.color)}">${esc(initials(m.name))}</div>` });
+      if (markers[d.id]) markers[d.id].setLatLng([m.lat, m.lng]).setIcon(icon);
+      else markers[d.id] = L.marker([m.lat, m.lng], { icon }).addTo(map);
+      markers[d.id].bindPopup(`${esc(m.name)}<br>${ago(m.ts)}`);
+      if (d.id === uid && !centered) { map.setView([m.lat, m.lng], 16); centered = true; }
+    });
+    $('members').innerHTML = list.map(m => `<div class="row"><div class="dot" style="background:${esc(m.color)}">${esc(initials(m.name))}</div><div class="t">${esc(m.name)}<small>${ago(m.ts)}</small></div></div>`).join('') || '<div class="empty">Ninguém compartilhou a localização ainda.</div>';
+  });
+
+  onSnapshot(collection(db, circle + '/places'), snap => {
+    places = []; snap.forEach(d => places.push({ id: d.id, ...d.data() }));
+    Object.values(placeLayers).forEach(l => l.remove()); placeLayers = {};
+    places.forEach(p => { placeLayers[p.id] = L.circle([p.lat, p.lng], { radius: p.radius, color: '#2563EB', weight: 2, fillOpacity: .12 }).addTo(map); });
+    $('places').innerHTML = places.map(p => `<div class="row"><div class="t">${esc(p.name)}<small>raio de ${p.radius} m</small></div><button class="ghost mini" data-del="${esc(p.id)}">Remover</button></div>`).join('') || '<div class="empty">Nenhum lugar salvo. Vá até o local e toque em “Salvar lugar atual”.</div>';
+  });
+
+  onSnapshot(query(collection(db, circle + '/events'), orderBy('ts', 'desc'), limit(15)), snap => {
+    const evs = []; snap.forEach(d => evs.push(d.data()));
+    $('events').innerHTML = evs.map(e => `<div class="row"><div class="t">${esc(e.name)} ${e.type} ${e.type === 'chegou' ? 'em' : 'de'} ${esc(e.place)}<small>${ago(e.ts)}</small></div></div>`).join('') || '<div class="empty">Sem avisos ainda.</div>';
+    snap.docChanges().forEach(c => {
+      const e = c.doc.data();
+      if (c.type === 'added' && e.ts > loadedAt) notify(`${e.name} ${e.type} ${e.type === 'chegou' ? 'em' : 'de'} ${e.place}`);
+    });
+  });
+}
+async function notify(body) {
+  if (NATIVE) return; // no app, o aviso chega por push
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const opts = { body, icon: 'icon.svg', badge: 'icon.svg', vibrate: [200, 100, 200], tag: 'circulo-' + Date.now() };
+  try { const reg = await navigator.serviceWorker.ready; await reg.showNotification('Círculo', opts); }
+  catch { try { new Notification('Círculo', opts); } catch {} }
+}
+async function keepAwake() { try { wakeLock = await navigator.wakeLock.request('screen'); $('wake').textContent = 'Tela acesa: ligado'; wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch {} }
+let placeLayers = {};
+
+$('places').addEventListener('click', e => { const id = e.target.dataset.del; if (id) deleteDoc(doc(db, circle + '/places', id)); });
+
+$('savePlace').onclick = () => {
+  if (!myPos) return alert('Ainda sem localização. Aguarde o GPS.');
+  const name = prompt('Nome do lugar (ex.: Casa, Escola):'); if (!name) return;
+  const radius = Math.max(50, parseInt(prompt('Raio em metros:', '150'), 10) || 150);
+  addDoc(collection(db, circle + '/places'), { name: name.trim().slice(0, 30), lat: myPos.lat, lng: myPos.lng, radius });
+};
+
+$('notif').onclick = async () => {
+  if (NATIVE) { await setupPush(); $('notif').textContent = 'Avisos ativados'; return; }
+  if (!('Notification' in window)) return alert('Este navegador não suporta avisos. No iPhone, adicione o app à tela inicial primeiro.');
+  $('notif').textContent = (await Notification.requestPermission()) === 'granted' ? 'Avisos ativados' : 'Avisos bloqueados';
+};
+
+$('wake').onclick = async () => {
+  try {
+    if (wakeLock) { await wakeLock.release(); wakeLock = null; $('wake').textContent = 'Manter tela acesa'; return; }
+    wakeLock = await navigator.wakeLock.request('screen'); $('wake').textContent = 'Tela acesa: ligado';
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch { alert('Não foi possível manter a tela acesa neste aparelho.'); }
+};
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && $('wake').textContent.includes('ligado') && !wakeLock) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch {} }
+});
+
+$('manual').onclick = () => {
+  manual = !manual;
+  if (manual) { map.on('click', onMapClick); $('manual').textContent = 'Voltar ao GPS'; $('status').textContent = 'Toque no mapa'; }
+  else { map.off('click', onMapClick); $('manual').textContent = 'Definir posição no mapa (teste)'; $('status').textContent = 'Buscando sinal…'; watch(true); }
+};
+
+let found = [], previewMarker = null;
+$('searchForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = $('q').value.trim(); if (!q) return;
+  $('results').innerHTML = '<div class="empty">Buscando…</div>';
+  try {
+    const b = map.getBounds();
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=br&accept-language=pt-BR&q=' + encodeURIComponent(q) +
+      `&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`;
+    found = await (await fetch(url)).json();
+  } catch { $('results').innerHTML = '<div class="empty">Não foi possível buscar. Verifique a internet e tente de novo.</div>'; return; }
+  $('results').innerHTML = found.length
+    ? found.map((r, i) => `<div class="row"><div class="t">${esc(r.display_name.split(',').slice(0, 3).join(','))}<small>${esc(r.display_name.split(',').slice(3, 6).join(','))}</small></div><button class="mini" data-add="${i}">Adicionar</button></div>`).join('')
+    : '<div class="empty">Nada encontrado. Tente incluir a cidade (ex.: Avenida Contorno Sul, Fortaleza).</div>';
+});
+$('results').addEventListener('click', e => {
+  const i = e.target.dataset.add; if (i === undefined) return;
+  const r = found[i], lat = +r.lat, lng = +r.lon;
+  map.setView([lat, lng], 16);
+  if (previewMarker) previewMarker.remove();
+  previewMarker = L.circleMarker([lat, lng], { radius: 9, color: '#2563EB', fillOpacity: .5 }).addTo(map);
+  setTimeout(() => {
+    const name = prompt('Nome do lugar:', r.display_name.split(',')[0].trim()); 
+    if (name) {
+      const radius = Math.max(50, parseInt(prompt('Raio em metros:', '150'), 10) || 150);
+      addDoc(collection(db, circle + '/places'), { name: name.trim().slice(0, 30), lat, lng, radius });
+      $('results').innerHTML = ''; $('q').value = '';
+    }
+    if (previewMarker) { previewMarker.remove(); previewMarker = null; }
+  }, 300);
+});
+$('leave').onclick = () => { store.del('name'); store.del('code'); location.reload(); };
+
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === b.dataset.tab));
+}));
+</script>
+</body>
+</html>

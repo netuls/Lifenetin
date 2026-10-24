@@ -1,0 +1,7 @@
+{
+  "appId": "com.netuls.circulo",
+  "appName": "Círculo",
+  "webDir": "www",
+  "android": { "useLegacyBridge": true },
+  "plugins": { "FirebaseMessaging": { "presentationOptions": ["alert", "sound"] } }
+}
