@@ -56,6 +56,10 @@ input{width:100%;padding:.8em 1em;border-radius:12px;border:1px solid var(--line
 .empty{color:var(--mut);padding:14px 2px}
 .stack{display:grid;gap:10px;padding-top:4px}
 .mini{padding:.45em .8em;font-size:.8rem}
+.pin{position:relative}
+.pin.me::after{content:"";position:absolute;inset:-4px;border-radius:50%;background:var(--pc);opacity:.5;z-index:-1;animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{from{transform:scale(.9);opacity:.6}to{transform:scale(2.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pin.me::after{animation:none;transform:scale(1.5);opacity:.35}}
 .leaflet-control-attribution{font-size:9px}
 @media (prefers-color-scheme:dark){.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9)}}
 </style>
@@ -212,7 +216,7 @@ function listen() {
     const list = [];
     snap.forEach(d => {
       const m = d.data(); if (m.lat == null) return; list.push(m);
-      const icon = L.divIcon({ className: '', iconSize: [36, 36], html: `<div class="pin" style="background:${esc(m.color)}">${esc(initials(m.name))}</div>` });
+      const icon = L.divIcon({ className: '', iconSize: [36, 36], html: `<div class="pin${d.id === uid ? ' me' : ''}" style="background:${esc(m.color)};--pc:${esc(m.color)}">${esc(initials(m.name))}</div>` });
       if (markers[d.id]) markers[d.id].setLatLng([m.lat, m.lng]).setIcon(icon);
       else markers[d.id] = L.marker([m.lat, m.lng], { icon }).addTo(map);
       markers[d.id].bindPopup(`${esc(m.name)}<br>${ago(m.ts)}`);
