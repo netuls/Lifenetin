@@ -273,6 +273,7 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && $('wake').textContent.includes('ligado') && !wakeLock) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch {} }
 });
 
+if (NATIVE || matchMedia('(pointer: coarse)').matches) $('manual').style.display = 'none'; // só no PC
 $('manual').onclick = () => {
   manual = !manual;
   if (manual) { map.on('click', onMapClick); $('manual').textContent = 'Voltar ao GPS'; $('status').textContent = 'Toque no mapa'; }
